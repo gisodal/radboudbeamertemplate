@@ -1,0 +1,98 @@
+\documentclass{beamer}
+
+\usepackage{pgfpages}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{fancybox}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage[noend]{algpseudocode}
+\usepackage{subfigure}
+\usepackage{textpos}
+\usepackage{anyfontsize}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{gnuplot-lua-tikz}
+\usepackage{color}
+\usepackage{animate}
+\usepackage{forloop}
+\usepackage{beamerbasedecode}
+\usetikzlibrary{positioning}
+% tikz package: command to define commands even when they exist
+\newcommand{\tikzlabel}[2]{
+    \ifdefined #1
+        \renewcommand{#1}{#2}
+    \else
+        \newcommand{#1}{#2}
+    \fi
+}
+
+% no indenting
+\setlength{\parindent}{0pt}
+
+\usetheme{Berkeley}
+\usecolortheme{seagull}
+\title{\emph{Presentation Title}}
+\author{by \emph{author}}
+%\institute{Version 1.0}
+\date{}
+
+%\setbeamertemplate{footline}[page number]
+
+\AtBeginSection[]{
+    \begin{frame}
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+    \end{frame}
+}
+
+\logo{\includegraphics[scale=0.25]{figures/ru_logo.eps}}
+
+\setbeamertemplate{sidebar left}[sidebar theme]
+\setbeamercovered{transparent}
+\setbeameroption{show notes on second screen=right}
+\setbeamerfont{note page}{size=\tiny}
+%\setbeameroption{show notes}
+%\setbeameroption{show only notes}
+%\setbeameroption{hide notes}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents
+\end{frame}
+
+% ===== insert sections here =====
+
+\input{example.tex}
+%\input{...}
+
+% ================================
+
+\section*{Questions}
+\begin{frame}
+\begin{center}
+\begin{Large}Questions?\end{Large}
+$ $\\
+$ $\\
+$ $\\
+$ $\\
+$ $\\
+Email me at \\
+\texttt{user} \textbf{at} \texttt{domain}\\
+for any further questions.
+\end{center}
+\end{frame}
+
+\end{document}
+
