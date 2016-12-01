@@ -39,44 +39,42 @@ endif
 
 recursive_wildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call recursive_wildcard,$d/,$2))
 wildcarddir=$(shell find $1 -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+recursive_wildcarddir=$(shell find $1 -mindepth 1 -type d 2>/dev/null)
 
 # ------------------------------------------------------------------------------
 # Environment
 # ------------------------------------------------------------------------------
 
-MAIN     = $(basename $(TEXFILE))
-SHELL    = /bin/bash
+MAIN       = $(basename $(TEXFILE))
+SHELL      = /bin/bash
 
-DIR  	 = $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-BUILDDIR = $(DIR)/build
+DIR  	   = $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+BIB        = $(DIR)/bib
+BUILDDIR   = $(DIR)/build
+ARCHIVEDIR = $(DIR)/archive
+STYLE      = $(DIR)/style
+THEME      = $(DIR)/themes
+PACKAGE    = $(DIR)/packages
+STYLES     = $(STYLE) $(call wildcarddir,$(STYLE))
+THEMES     = $(THEME) $(call recursive_wildcarddir,$(THEME))
+PACKAGES   = $(PACKAGE) $(call recursive_wildcarddir,$(PACKAGE))
 
-BIB      = $(DIR)/bib
-STYLE    = $(DIR)/style
-PLOTS    = $(DIR)/plots
-TABLES   = $(DIR)/tables
-FIGURES  = $(DIR)/figures
-PACKAGE  = $(DIR)/packages
-DIAGRAMS = $(DIR)/diagrams
-SECTIONS = $(DIR)/sections
-STYLES   = $(STYLE) $(call wildcarddir,$(STYLE))
-PACKAGES = $(PACKAGE) $(call wildcarddir,$(PACKAGE))
+INCLUDE    = $(DIR) $(STYLES) $(PACKAGES) $(LATEX_INCLUDE_PATH) $(THEMES)
+override   LATEX_INCLUDE_PATH := $(subst $(subst ,, ),:,$(strip $(INCLUDE)))
 
-INCLUDE  = $(DIR) $(BIB) $(PLOTS) $(TABLES) $(FIGURES) $(DIAGRAMS) $(SECTIONS) $(STYLES) $(PACKAGES) $(LATEX_INCLUDE_PATH)
-override LATEX_INCLUDE_PATH := $(subst $(subst ,, ),:,$(strip $(INCLUDE)))
-
-TEXFLAGS  = -halt-on-error -file-line-error -interaction=nonstopmode -output-directory="$(BUILDDIR)"
-LATEX 	  = TEXINPUTS="$(LATEX_INCLUDE_PATH):$$TEXINPUTS" pdflatex $(TEXFLAGS)
-IBIBS     = $(wildcard $(DIR)/bib/*.bib) $(wildcard $(DIR)/*.bib)
-OBIBS     = $(addprefix $(BUILDDIR)/, $(notdir $(IBIBS)))
-BIBTEX    = bibtex
-PDFVIEWER = mupdf
-BIBTOOL   = bibtool -s -d -x
+TEXFLAGS   = -halt-on-error -file-line-error -interaction=nonstopmode -output-directory="$(BUILDDIR)" -recorder
+LATEX 	   = TEXINPUTS="$(LATEX_INCLUDE_PATH):$(TEXINPUTS)" pdflatex $(TEXFLAGS)
+IBIBS      = $(wildcard $(DIR)/bib/*.bib) $(wildcard $(DIR)/*.bib)
+OBIBS      = $(addprefix $(BUILDDIR)/, $(notdir $(IBIBS)))
+BIBTEX     = bibtex
+PDFVIEWER  = mupdf
+BIBTOOL    = bibtool -s -d -x
 
 # ------------------------------------------------------------------------------
 # Rules
 # ------------------------------------------------------------------------------
 
-.PHONY: $(MAIN) clean pdf bib plots diagrams view all
+.PHONY: $(MAIN) clean pdf bib plots diagrams view all archive
 
 $(MAIN): pdf
 
@@ -90,9 +88,9 @@ all:
 	$(MAKE) pdf
 	$(MAKE) pdf
 
-bib: force $(filter-out %references.bib,$(IBIBS)) | $(BIB)
-	@$(BIBTOOL) $(BUILDDIR)/$(MAIN).aux $(IBIBS) 2>/dev/null > $(BIB)/references.bib
-	@echo "references.bib created.."
+bib: force $(filter-out %$(MAIN).export.bib,$(IBIBS)) | $(BIB)
+	@$(BIBTOOL) $(BUILDDIR)/$(MAIN).aux $(IBIBS) 2>/dev/null > $(BIB)/$(MAIN).export.bib
+	@echo "$(BIB)/$(MAIN).export.bib created.."
 
 $(MAIN).pdf: $(BUILDDIR)/$(MAIN).pdf
 	@cp $(BUILDDIR)/$(MAIN).pdf $(DIR)/
@@ -110,6 +108,9 @@ $(BUILDDIR)/$(MAIN).bbl: force $(OBIBS) | $(BUILDDIR)
 $(BUILDDIR):
 	@mkdir -p "$(BUILDDIR)"
 
+$(ARCHIVEDIR):
+	@mkdir -p "$(ARCHIVEDIR)"
+
 $(BIB):
 	@mkdir -p "$(BIB)"
 
@@ -124,6 +125,7 @@ diagrams:
 
 clean:
 	@rm -rf "$(BUILDDIR)"
+	@rm -f $(MAIN).{log,spl,fls,aux,bbl,blg}
 
 ifeq ($(firstword $(MAKECMDGOALS)),view)
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -140,6 +142,20 @@ view:
 		echo "Cannot view $(MAIN).pdf, Command '$$PDFVIEWER' does not exist." 1>&2;   \
 		exit 0;                                                               \
 	fi;
+
+
+$(BUILDDIR)/$(MAIN).fls:
+	$(info $(BUILDDIR)/$(MAIN).fls)
+	$(error Compilation is required in order to determine dependencies)
+
+
+archive: | $(BUILDDIR)/$(MAIN).fls
+archive: TARFILE = $$(echo $(ARCHIVEDIR)/$(MAIN)_$$(date +"%Y_%m_%d_%H_%M_%S") | tr -d ' ').tar
+archive: $(ARCHIVEDIR)
+	@echo "CREATE TAR $(TARFILE)";
+	@tar --exclude=".*" -cvf $(TARFILE) --transform 's:^$(DIR:/%=%)/::' --transform 's:^$(DIR)/::' --transform 's:^:$(MAIN)/:'\
+		$(wildcard Makefile README) $(DIR)/$(BIB)/$(MAIN).export.bib $(shell cat $(BUILDDIR)/$(MAIN).fls | grep 'INPUT.*$(DIR)' | awk '{print $$2}' | uniq)  2>/dev/null \
+		| sed 's:^:    ADD :'
 
 update:
 	@if [ -d "$(PACKAGEDIR)" ]; then 	\
@@ -162,6 +178,7 @@ help:
 	@echo "    cite          : bibtex citations"
 	@echo "    clean         : remove latex build files"
 	@echo "    update        : update local texhash"
+	@echo "    archive       : create tarball of local files"
 	@echo "    view [viewer] : open pdf with [viewer]"
 	@echo ""
 	@echo "    * = default"
