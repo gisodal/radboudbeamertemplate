@@ -1,4 +1,4 @@
-# texpresemplate
+# Radboud University LaTeX presentation template
 
 This is a (non-official) Radboud University LaTeX presentation template.
 
