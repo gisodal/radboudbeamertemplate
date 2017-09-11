@@ -53,13 +53,11 @@ BIB        = $(DIR)/bib
 BUILDDIR   = $(DIR)/build
 ARCHIVEDIR = $(DIR)/archive
 STYLE      = $(DIR)/style
-THEME      = $(DIR)/theme
 PACKAGE    = $(DIR)/packages
-STYLES     = $(STYLE) $(call wildcarddir,$(STYLE))
-THEMES     = $(THEME) $(call recursive_wildcarddir,$(THEME))
+STYLES     = $(STYLE) $(call recursive_wildcarddir,$(STYLE))
 PACKAGES   = $(PACKAGE) $(call recursive_wildcarddir,$(PACKAGE))
 
-INCLUDE    = $(DIR) $(STYLES) $(PACKAGES) $(LATEX_INCLUDE_PATH) $(THEMES)
+INCLUDE    = $(DIR) $(STYLES) $(PACKAGES) $(LATEX_INCLUDE_PATH)
 override   LATEX_INCLUDE_PATH := $(subst $(subst ,, ),:,$(strip $(INCLUDE)))
 
 TEXFLAGS   = -halt-on-error -file-line-error -interaction=nonstopmode -output-directory="$(BUILDDIR)" -recorder
