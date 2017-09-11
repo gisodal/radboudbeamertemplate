@@ -53,7 +53,7 @@ BIB        = $(DIR)/bib
 BUILDDIR   = $(DIR)/build
 ARCHIVEDIR = $(DIR)/archive
 STYLE      = $(DIR)/style
-THEME      = $(DIR)/themes
+THEME      = $(DIR)/theme
 PACKAGE    = $(DIR)/packages
 STYLES     = $(STYLE) $(call wildcarddir,$(STYLE))
 THEMES     = $(THEME) $(call recursive_wildcarddir,$(THEME))
@@ -67,14 +67,14 @@ LATEX 	   = TEXINPUTS="$(LATEX_INCLUDE_PATH):$(TEXINPUTS)" pdflatex $(TEXFLAGS)
 IBIBS      = $(wildcard $(DIR)/bib/*.bib) $(wildcard $(DIR)/*.bib)
 OBIBS      = $(addprefix $(BUILDDIR)/, $(notdir $(IBIBS)))
 BIBTEX     = bibtex
-PDFVIEWER  = mupdf
+PDFVIEWER  = evince
 BIBTOOL    = bibtool -s -d -x
 
 # ------------------------------------------------------------------------------
 # Rules
 # ------------------------------------------------------------------------------
 
-.PHONY: $(MAIN) clean pdf bib plots diagrams view all archive
+.PHONY: $(MAIN) clean pdf bib plots diagrams view all archive ls
 
 $(MAIN): pdf
 
@@ -134,13 +134,13 @@ endif
 
 view: VIEWER = $(firstword $(ARGS))
 view:
-	@PDFVIEWER=$$([ -z "$(VIEWER)" ] && echo $(PDFVIEWER) || echo $(VIEWER)); \
-	if [ $$(command -v $$PDFVIEWER) ]; then                                   \
-		echo "$$PDFVIEWER $(MAIN).pdf";                                       \
-		env -i DISPLAY=$$DISPLAY $$PDFVIEWER $(DIR)/$(MAIN).pdf;              \
-	else                                                                      \
-		echo "Cannot view $(MAIN).pdf, Command '$$PDFVIEWER' does not exist." 1>&2;   \
-		exit 0;                                                               \
+	@PDFVIEWER=$$([ -z "$(VIEWER)" ] && echo $(PDFVIEWER) || echo $(VIEWER)); 						\
+	if [ ! $$(command -v $$PDFVIEWER) ]; then                                   					\
+		echo "Cannot view $(MAIN).pdf, Command '$$PDFVIEWER' does not exist." 1>&2;   				\
+		exit 0;                                                               						\
+	else																							\
+		echo "$$PDFVIEWER $(MAIN).pdf";                                       						\
+		nohup env -i DISPLAY=$$DISPLAY $$PDFVIEWER $(DIR)/$(MAIN).pdf </dev/null >/dev/null 2>&1 &  \
 	fi;
 
 
@@ -154,7 +154,7 @@ archive: TARFILE = $$(echo $(ARCHIVEDIR)/$(MAIN)_$$(date +"%Y_%m_%d_%H_%M_%S") |
 archive: $(ARCHIVEDIR)
 	@echo "CREATE TAR $(TARFILE)";
 	@tar --exclude=".*" -cvf $(TARFILE) --transform 's:^$(DIR:/%=%)/::' --transform 's:^$(DIR)/::' --transform 's:^:$(MAIN)/:'\
-		$(wildcard Makefile README) $(DIR)/$(BIB)/$(MAIN).export.bib $(shell cat $(BUILDDIR)/$(MAIN).fls | grep 'INPUT.*$(DIR)' | awk '{print $$2}' | uniq)  2>/dev/null \
+		$(wildcard Makefile README) $(DIR)/*.bib  $(DIR)/$(BIB)/*.bib $(shell cat $(BUILDDIR)/$(MAIN).fls | command grep 'INPUT.*$(DIR)' | command grep -v 'INPUT.*$(BUILDDIR)' | command awk '{print $$2}' | command uniq)  2>/dev/null \
 		| sed 's:^:    ADD :'
 
 update:
@@ -166,6 +166,16 @@ update:
 	fi;
 
 force: ;
+
+ls: force
+	@if [ -f "$(BUILDDIR)/$(MAIN).fls" ]; then               \
+		cat $(BUILDDIR)/$(MAIN).fls |                        \
+			command grep 'INPUT.*$(DIR)' |                   \
+			command grep -v 'INPUT.*$(BUILDDIR)' |           \
+			command awk '{print $$2}';                       \
+	else                                                     \
+		echo "dependency file '$(MAIN).fls' not found" 1>&2; \
+	fi;
 
 help:
 	@echo "Usage:"
