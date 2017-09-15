@@ -30,12 +30,19 @@
 \setbeamertemplate{itemize item}[circle]
 \setbeamertemplate{subitemize item}[-]
 
+% move sections in left bar downward
+\newcommand{\vskipnavigator}{10pt}
+\usepackage{etoolbox}
+ \patchcmd\insertverticalnavigation{\dohead}{\vskip\vskipnavigator\dohead}{}{}
 
+% title and authors
+\newcommand{\mytitle}{Presentation Title}
+\newcommand{\myauthors}{Authors}
 
 \begin{document}
 
-    \title{\emph{Presentation Title}}
-    \author{by \emph{author}}
+    \title[]{\emph{\mytitle}}
+    \author[]{by \emph{author}}
     \date{}
 
     % disable sidebar content
