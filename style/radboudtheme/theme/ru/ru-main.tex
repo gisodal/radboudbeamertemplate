@@ -121,7 +121,10 @@
 %     \vskip-1.5em%
     \vfil%
     %% Adding the bar
-    {\hrule width 0.6\paperwidth}%
+    \newdimen\mybarwidth
+    \mybarwidth=\paperwidth
+    \advance\mybarwidth by -1.7\beamer@sidebarwidth
+    {\hrule width \mybarwidth}%
   }%
 }%
 
